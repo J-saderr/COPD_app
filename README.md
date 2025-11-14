@@ -1,18 +1,24 @@
-## Getting Started
+## Backend: COPD Lung Sound Inference API
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+### Prerequisites
+- Python 3.11+
+- MongoDB instance (local `mongodb://localhost:27017`)
+- Pretrained ONNX model at `models/audio_classifier.onnx` (configure via `MODEL_PATH`)
 
-## Folder Structure
-
-The workspace contains two folders by default, where:
-
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
-
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
-
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
-
-## Dependency Management
-
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+### Setup
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+```
+### Run development server
+#### BE
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+#### FE
+```bash
+cd ../COPD_app/frontend
+npm run dev
+```
+### Open website in site http://localhost:3000
