@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     storage_bucket: str = Field(default="lung-audio")
     upload_dir: Path = Field(default=Path("/tmp/copd/uploads"))
     model_path: Path = Field(default=Path("models/audio_classifier.onnx"))
+    model_type: str = Field(default="onnx", description="Model type: 'onnx' or 'pytorch'")
+    icbhi_path: Optional[Path] = Field(
+        default=None,
+        description="Path to ICBHI_2017 directory (required for PyTorch model)"
+    )
     inference_batch_size: int = Field(default=1)
     allow_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
     infra_path: Optional[Path] = DEFAULT_INFRA_PATH

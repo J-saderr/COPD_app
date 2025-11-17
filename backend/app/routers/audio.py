@@ -10,7 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from ..core.config import settings
 from ..models.prediction import Prediction, PredictionCreate, PredictionStatus
 from ..repositories.predictions import PredictionRepository
-from ..services.inference import inference_service
+from ..services.inference import get_inference_service
 from ..services.storage import storage_service
 from ..utils.audio import extract_mel_spectrogram, load_waveform
 
@@ -80,9 +80,22 @@ async def _process_prediction(
     audio_path: Path,
 ) -> None:
     try:
+        # Get the appropriate inference service based on config
+        inference_service = get_inference_service()
+        
+        # Load waveform
         waveform = load_waveform(audio_path)
-        features = extract_mel_spectrogram(waveform)
-        result = await inference_service.predict(features)
+        
+        # Different models expect different inputs:
+        # - ONNX: mel-spectrogram features
+        # - PyTorch: raw waveform
+        if settings.model_type.lower() == "pytorch":
+            # PyTorch model expects raw waveform
+            result = await inference_service.predict(waveform)
+        else:
+            # ONNX model expects mel-spectrogram
+            features = extract_mel_spectrogram(waveform)
+            result = await inference_service.predict(features)
 
         await repository.update_status(
             prediction_id,

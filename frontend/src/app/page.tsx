@@ -90,23 +90,42 @@ export default function Home() {
   const pollPrediction = useCallback(async (predictionId: string) => {
     setUploadState("analyzing");
     for (let attempt = 0; attempt < 30; attempt += 1) {
-      const response = await fetch(
-        `${API_BASE_URL}/api/audio/${predictionId}`,
-      );
-      if (!response.ok) {
-        throw new Error("Prediction lookup failed");
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/audio/${predictionId}`,
+        );
+        if (!response.ok) {
+          // Nếu là 404, có thể prediction chưa được tạo - tiếp tục retry
+          if (response.status === 404 && attempt < 5) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            continue;
+          }
+          const errorText = await response.text();
+          throw new Error(
+            `Prediction lookup failed (${response.status}): ${
+              errorText || "Unknown error"
+            }`,
+          );
+        }
+        const data: Prediction = await response.json();
+        setCurrentPrediction(data);
+        if (data.status === "completed" || data.status === "failed") {
+          setHistory((prev) => {
+            const other = prev.filter((item) => item.id !== data.id);
+            return [data, ...other].slice(0, 10);
+          });
+          setUploadState(data.status === "completed" ? "complete" : "error");
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (error) {
+        // Nếu là network error và còn attempts, retry
+        if (attempt < 5 && error instanceof TypeError) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          continue;
+        }
+        throw error;
       }
-      const data: Prediction = await response.json();
-      setCurrentPrediction(data);
-      if (data.status === "completed" || data.status === "failed") {
-        setHistory((prev) => {
-          const other = prev.filter((item) => item.id !== data.id);
-          return [data, ...other].slice(0, 10);
-        });
-        setUploadState(data.status === "completed" ? "complete" : "error");
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
     throw new Error("Prediction timed out");
   }, []);
@@ -131,19 +150,39 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        const description =
-          response.status === 400
-            ? "Định dạng file không hợp lệ."
-            : "Không thể tải lên âm thanh. Vui lòng thử lại.";
-        throw new Error(description);
+        const errorText = await response.text();
+        let description = "Không thể tải lên âm thanh. Vui lòng thử lại.";
+        if (response.status === 400) {
+          description = "Định dạng file không hợp lệ.";
+        } else if (response.status === 500) {
+          description = "Lỗi server. Vui lòng kiểm tra backend.";
+        }
+        throw new Error(`${description} (${response.status}: ${errorText})`);
       }
 
-      const prediction: Prediction = await response.json();
+      const predictionData: any = await response.json();
+      
+      // Handle both _id (from MongoDB) and id (from Pydantic)
+      // Pydantic với Field(alias="_id") should convert to "id" in JSON
+      const predictionId = predictionData?.id || predictionData?._id;
+      
+      if (!predictionData || !predictionId) {
+        console.error("Invalid prediction response:", predictionData);
+        throw new Error(
+          `Server không trả về prediction ID hợp lệ. Response: ${JSON.stringify(predictionData)}`,
+        );
+      }
+      
+      const prediction: Prediction = {
+        ...predictionData,
+        id: predictionId,
+      };
+      
       setCurrentPrediction(prediction);
       await pollPrediction(prediction.id);
       await fetchHistory();
     } catch (error) {
-      console.error(error);
+      console.error("Upload error:", error);
       const message =
         error instanceof Error
           ? error.message
@@ -277,8 +316,8 @@ export default function Home() {
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {sortedHistory.length ? (
-              sortedHistory.map((item) => (
-                <PredictionCard key={item.id} item={item} />
+              sortedHistory.map((item, index) => (
+                <PredictionCard key={item.id || `prediction-${index}`} item={item} />
               ))
             ) : (
               <p className="text-sm text-slate-500">

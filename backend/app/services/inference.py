@@ -11,6 +11,16 @@ from ..core.config import settings
 from ..models.prediction import Label
 
 
+def get_inference_service():
+    """Get the appropriate inference service based on model_type config."""
+    if settings.model_type.lower() == "pytorch":
+        from .pytorch_inference import get_pytorch_inference_service
+        return get_pytorch_inference_service()
+    else:
+        # Default to ONNX
+        return inference_service
+
+
 class AudioInferenceService:
     """Run ONNX model inference on lung sound audio clips."""
 
@@ -58,4 +68,8 @@ class AudioInferenceService:
 
 
 inference_service = AudioInferenceService()
+
+
+# For backward compatibility, export the service getter
+__all__ = ["AudioInferenceService", "inference_service", "get_inference_service"]
 
