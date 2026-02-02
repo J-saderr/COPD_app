@@ -13,27 +13,27 @@ import torch
 import torch.nn as nn
 
 # Path đến model
-MODEL_PATH = Path("/Users/vothao/ICBHI_2017/scripts/best.pth")
+MODEL_PATH = Path("../ICBHI_2017/save/icbhi_hftt_projectors_loss_seed2_hftt/best.pth")
 
 def test_model_loading():
     """Test loading the PyTorch model checkpoint."""
     
     # Kiểm tra file tồn tại
     if not MODEL_PATH.exists():
-        print(f"❌ ERROR: Model file not found at {MODEL_PATH}")
+        print(f" ERROR: Model file not found at {MODEL_PATH}")
         return False
     
-    print(f"✅ Model file found: {MODEL_PATH}")
+    print(f"[OK] Model file found: {MODEL_PATH}")
     print(f"   Size: {MODEL_PATH.stat().st_size / (1024**2):.2f} MB")
     
     # Load checkpoint
     try:
-        print("\n🔄 Loading checkpoint...")
+        print("\n[LOADING] Loading checkpoint...")
         checkpoint = torch.load(str(MODEL_PATH), map_location='cpu', weights_only=False)
-        print("✅ Checkpoint loaded successfully!")
+        print("[OK] Checkpoint loaded successfully!")
         
         # Inspect checkpoint structure
-        print("\n📋 Checkpoint keys:")
+        print("\n[INFO] Checkpoint keys:")
         for key in checkpoint.keys():
             if key == 'model':
                 print(f"   - {key}: Model state_dict")
@@ -74,14 +74,14 @@ def test_model_loading():
                 print(f"   - {key}: {type(checkpoint[key])}")
         
         # Validate model structure
-        print("\n🔍 Validating model structure...")
+        print("\n[CHECK] Validating model structure...")
         
         if 'model' not in checkpoint:
-            print("❌ ERROR: 'model' key not found in checkpoint")
+            print("[ERROR] ERROR: 'model' key not found in checkpoint")
             return False
         
         if 'classifier' not in checkpoint:
-            print("❌ ERROR: 'classifier' key not found in checkpoint")
+            print("[ERROR] ERROR: 'classifier' key not found in checkpoint")
             return False
         
         model_state = checkpoint['model']
@@ -94,19 +94,19 @@ def test_model_loading():
         # Check classifier shape
         if 'weight' in classifier_state:
             weight_shape = classifier_state['weight'].shape
-            print(f"✅ Classifier weight shape: {weight_shape}")
+            print(f"[OK] Classifier weight shape: {weight_shape}")
             print(f"   -> Input features: {weight_shape[1]}, Output classes: {weight_shape[0]}")
         
-        print("\n✅ Model structure validated!")
-        print("\n📝 Summary:")
+        print("\n[OK] Model structure validated!")
+        print("\n[NOTE] Summary:")
         print(f"   - Model type: {checkpoint.get('args', type('Args', (), {'model': 'unknown'})).model if hasattr(checkpoint.get('args', type('Args', (), {})), 'model') else 'unknown'}")
         print(f"   - Number of classes: {checkpoint.get('args', type('Args', (), {'n_cls': 4})).n_cls if hasattr(checkpoint.get('args', type('Args', (), {})), 'n_cls') else 'unknown'}")
-        print(f"   - Model can be loaded: ✅ YES")
+        print(f"   - Model can be loaded: [OK] YES")
         
         return True
         
     except Exception as e:
-        print(f"❌ ERROR loading checkpoint: {e}")
+        print(f"[ERROR] ERROR loading checkpoint: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -121,9 +121,9 @@ if __name__ == "__main__":
     
     print("\n" + "=" * 60)
     if success:
-        print("✅ Test PASSED: Model can be loaded!")
+        print("[OK] Test PASSED: Model can be loaded!")
     else:
-        print("❌ Test FAILED: Model cannot be loaded!")
+        print("[ERROR] Test FAILED: Model cannot be loaded!")
     print("=" * 60)
     
     sys.exit(0 if success else 1)
