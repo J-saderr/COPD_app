@@ -122,7 +122,7 @@ def load_model_with_wrapper(
             
             try:
                 os.chdir(icbhi_path_str)
-                from model import get_backbone_class
+                from models import get_backbone_class
                 
                 # Create model with same architecture as training
                 if model_type == "hftt":

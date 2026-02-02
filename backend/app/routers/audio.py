@@ -25,7 +25,7 @@ def get_repository() -> PredictionRepository:
 
 
 @router.post(
-    "/",
+    "",
     response_model=Prediction,
     status_code=201,
     summary="Upload lung sound audio for analysis",
@@ -66,7 +66,12 @@ async def get_prediction(
     return prediction
 
 
-@router.get("/", response_model=list[Prediction], summary="List recent predictions")
+@router.get(
+    "",
+    response_model=list[Prediction],
+    summary="List recent predictions",
+    response_description="List of recent predictions ordered by creation time",
+)
 async def list_predictions(
     repository: Annotated[PredictionRepository, Depends(get_repository)],
     limit: int = 20,
